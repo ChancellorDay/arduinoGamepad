@@ -95,6 +95,8 @@ class Hardware {
     //HardwareCode is a variable that contains the 2 character string code which represents the
     //type of hardware it is
     String hardwareCode;
+    unsigned long timeOfLastPress;
+    bool pressed;
     //RotaryEncoders: RE
     //Rotary Buttons: RB
     //Rotational Potentiomoters: RP
@@ -141,6 +143,29 @@ class Hardware {
       String numString = String(num);
       Serial.println(overrideCode + numString + state);
     }
+
+    void pressLogic(int button, bool tryToPress) {
+      if (tryToPress) {
+        Serial.print("button# trytoPress: ");
+        Serial.println(button);
+        Joystick.setButton(button, 1);
+        pressed = true;
+        timeOfLastPress = millis();
+        return;
+      }
+
+      if(pressed) {
+        //Serial.println(millis() - timeOfLastPress);
+        if ((millis() - timeOfLastPress) > 50) {
+          
+          Serial.print("button# unpressed: ");
+        Serial.println(button);
+          Joystick.setButton(button, 0);
+          pressed = false;
+        }
+      }
+    }
+
 };
 
 //Derived from hardware class
@@ -151,6 +176,8 @@ class RotaryEncoder: public Hardware {
     bool sw;
     int swPin;
     String currentDir;
+    bool cwPressed;
+    bool ccwPressed;
 
     int ccwButton;
     int cwButton;
@@ -176,6 +203,7 @@ class RotaryEncoder: public Hardware {
       ccwButton = gamePadButtonNum;
       cwButton = ccwButton + 1;
       gamePadButtonNum = gamePadButtonNum + 2;
+      pressed = false;
 
 
 
@@ -193,6 +221,7 @@ class RotaryEncoder: public Hardware {
       NUMENCODERS++;
       lastButtonPress = 0;
       lastStateCLK = digitalRead(clkPinInput);
+      pressed = false;
 
       // Set encoder pins as inputs
       pinMode(clkPin,INPUT);
@@ -267,19 +296,66 @@ class RotaryEncoder: public Hardware {
           //if 50ms have passed since last LOW pulse, it means that the
           //button has been pressed, released and pressed again
           if (millis() - lastButtonPress > 50) {
-            serialSignal("C", "RB");
+            //serialSignal("C", "RB");
         }
         // Remember last button press event
         lastButtonPress = millis();
         }
       }
 
-  
+  /*
+      pressLogic(ccwButton, false);
+      pressLogic(cwButton, false);
+
+  */
       
       unsigned char pinstate = (digitalRead(clkPin) << 1) | digitalRead(dtPin);
       state = ttable[state & 0xf][pinstate];
       return (state & 0x30);
     }
+
+    void pressLogic(int button, bool tryToPress) {
+      bool cw = button == cwButton;
+    
+
+      if (tryToPress) {
+        Serial.print("button# trytoPress: ");
+        Serial.println(button);
+        Joystick.setButton(button, 1);
+        if (cw) {
+          cwPressed = true;
+          ccwPressed = false;
+          Joystick.setButton(ccwButton, 0);
+        } else {
+          ccwPressed = true;
+          cwPressed = false;
+          Joystick.setButton(cwButton, 0);
+        }
+        timeOfLastPress = millis();
+        return;
+      }
+
+      if(cwPressed) {
+        //Serial.println(millis() - timeOfLastPress);
+        if ((millis() - timeOfLastPress) > 200) {
+          
+          Serial.print("button# unpressed: ");
+          Serial.println(cwButton);
+          Joystick.setButton(cwButton, 0);
+          cwPressed = false;
+        }
+      }
+      if (ccwPressed) {
+        if ((millis() - timeOfLastPress) > 200) {
+          
+          Serial.print("button# unpressed: ");
+          Serial.println(ccwButton);
+          Joystick.setButton(ccwButton, 0);
+          ccwPressed = false;
+        }
+      }
+    }
+
     	
 };
 
@@ -295,7 +371,7 @@ class Potentiometer: public Hardware {
       num = NUMPOTENTIOMETERS;
       pin = pinInput;
       lastSentOutputNum = getAverageOutputOutOfOne();
-      serialSignal(lastSentOutputNum);
+      //serialSignal(lastSentOutputNum);
       axis = axisInput;
 
       NUMPOTENTIOMETERS++;
@@ -354,7 +430,7 @@ class Potentiometer: public Hardware {
     void readPotentiometer() {
       double potentiometerOutOfOne = getAverageOutputOutOfOne();
       if(abs(potentiometerOutOfOne - lastSentOutputNum) >= 0.01) {
-        serialSignal(potentiometerOutOfOne);
+        //serialSignal(potentiometerOutOfOne);
         lastSentOutputNum = potentiometerOutOfOne;
         updateJoystick();
 
@@ -412,19 +488,28 @@ void readAllEncoders() {
     if (result == DIR_CCW) {
       REArray[i].serialSignal("CC");
 
+      //REArray[i].pressLogic(REArray[i].ccwButton, 1);
+/*
       Joystick.setButton(REArray[i].ccwButton, 1);
-      delay(50);
+      delay(20);
       Joystick.setButton(REArray[i].ccwButton, 0);
-
+*/
     } else if(result == DIR_CW) {
       REArray[i].serialSignal("CW");
 
+      //REArray[i].pressLogic(REArray[i].cwButton, 1);
+/*
       Joystick.setButton(REArray[i].cwButton, 1);
-      delay(50);
+      delay(20);
       Joystick.setButton(REArray[i].cwButton, 0);
-
+*/
     }
+    //REArray[i].pressLogic(REArray[i].cwButton, 0);
+    //REArray[i].pressLogic(REArray[i].ccwButton, 0);
+    
+
   }
+  
 }
 
 void readAllPotentiometers() {

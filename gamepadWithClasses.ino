@@ -69,17 +69,59 @@ void axisSet(int axisIdInput, int value) {
   }
 }
 
-/*
+
 
 class Button {
-  int pin1;
-  int pin2;
+  public:
+    int pin;
+    uint8_t gamePadButton;
+    bool pressed;
+    unsigned long lastButtonPress;
 
-  Button(pin1Input, pin2Input) {
-    pin1 = pin1Input;
-    pin2 = pin2Input;
-  }
-}; */
+    Button(uint8_t pinInput) {
+      pin = pinInput;
+      pinMode(pin, INPUT);
+      digitalWrite(pin, HIGH);
+      gamePadButton = GAMEPADBUTTONNUM;
+      GAMEPADBUTTONNUM++;
+      pressed = false;
+      lastButtonPress = millis();
+    }
+
+    void buttonLogic(bool tryToPress) {
+
+      if (tryToPress && !pressed) {
+        Joystick.pressButton(gamePadButton);
+        pressed = true;
+      } else if (!tryToPress && pressed) {
+        if(lastButtonPress - CURRENTMILLIS > 100) {
+          Joystick.releaseButton(gamePadButton);
+          pressed = false;
+        }
+        
+      }
+
+    }
+
+    void readButton() {
+      int btnState = digitalRead(pin);
+        //If we detect LOW signal, button is pressed
+        if (btnState == LOW) {
+          //if 50ms have passed since last LOW pulse, it means that the
+          //button has been pressed, released and pressed again
+          if (CURRENTMILLIS - lastButtonPress > 100) {
+            buttonLogic(true);
+        }
+        // Remember last button press event
+        lastButtonPress = CURRENTMILLIS;
+        } else {
+          buttonLogic(false);
+        }
+    }
+    
+
+
+};
 
 class Potentiometer {
   public:
@@ -119,8 +161,8 @@ class REWrapper {
     uint8_t gamePadButton;
     int axisId;
     int direction;
-    int cwGamepadButton;
-    int ccwGamepadButton;
+    uint8_t cwGamepadButton;
+    uint8_t ccwGamepadButton;
     unsigned long lastTurn;
     bool turnPressed;
     long currentPosition;
@@ -229,7 +271,7 @@ class REWrapper {
     void RETurnLogic() {
       currentPosition = REWrapped.getPosition();
 
-      if (turnPressed && (CURRENTMILLIS - lastTurn > 50)) {
+      if (turnPressed && (CURRENTMILLIS - lastTurn > 150)) {
         Joystick.releaseButton(cwGamepadButton);
         Joystick.releaseButton(ccwGamepadButton);
         turnPressed = false;
@@ -265,7 +307,7 @@ class REWrapper {
 
 };
 
-
+//Button B0(8);
 REWrapper REW0(6, 7, 13, 0);
 REWrapper REW1(4, 5, 1);
 REWrapper REW2(2, 3, 2);
@@ -292,5 +334,6 @@ void loop() {
   REW1.REWCall();
   REW2.REWCall();
   REW3.REWCall();
+  //B0.readButton();
 
 }

@@ -145,6 +145,7 @@ class Potentiometer {
 
     void gamepadAxisLogic() {
       axisSet(axisId, map(getAverageOutput(),0, 1023, -500, 500));
+
     }
 
 
@@ -214,7 +215,7 @@ class REWrapper {
       axisId = axisIdInput;
 
 
-      pinMode(swPin, INPUT_PULLUP);
+      //pinMode(swPin, INPUT_PULLUP);
     }
 
     int getDirectionalRPM() {
@@ -250,9 +251,9 @@ class REWrapper {
     }
 
     void readREButton() {
-      if (!sw) {
+      /*if (!sw) {
         return;
-      }
+      } */
       int btnState = digitalRead(swPin);
         //If we detect LOW signal, button is pressed
         if (btnState == LOW) {
@@ -277,17 +278,15 @@ class REWrapper {
         turnPressed = false;
       }
 
-      //Serial.println(currentPosition);
+ 
 
       if(currentPosition > lastPosition) {
         lastPosition = currentPosition;
-        //Serial.println("dir 1");
         Joystick.pressButton(cwGamepadButton);
         lastTurn = CURRENTMILLIS;
         turnPressed = true;
       } else if (currentPosition < lastPosition) {
         lastPosition = currentPosition;
-        //Serial.println("dir -1");
         Joystick.pressButton(ccwGamepadButton);
         lastTurn = CURRENTMILLIS;
         turnPressed = true;
@@ -298,20 +297,27 @@ class REWrapper {
     REWCall() {
       
       REWrapped.tick();
-      if(sw) {
+      //if(sw) {
         readREButton();
-      }
+      //}
       gamepadAxisLogic();
       RETurnLogic();
     }
 
 };
 
-//Button B0(8);
-REWrapper REW0(6, 7, 13, 0);
-REWrapper REW1(4, 5, 1);
-REWrapper REW2(2, 3, 2);
-REWrapper REW3(0, 1, 3);
+
+REWrapper REW0(0, 1, 2, 0);
+REWrapper REW1(3, 4, 5, 1);
+REWrapper REW2(6, 7, 8, 2);
+
+Button BT0(9);
+Button BT1(10);
+Button BT2(11);
+
+Potentiometer SP0(A5, 3);
+Potentiometer SP1(A4, 4);
+Potentiometer SP2(A3, 5);
 void setup() {
   CURRENTMILLIS = millis();
   // put your setup code here, to run once:
@@ -325,6 +331,18 @@ void setup() {
   Joystick.setRxAxisRange(-500, 500);
   Joystick.setRyAxisRange(-500, 500);
   Joystick.setRzAxisRange(-500, 500);
+  Joystick.setRudderRange(-500, 500);
+  Joystick.setThrottleRange(-500, 500);
+  Joystick.setAcceleratorRange(-500, 500);
+  Joystick.setBrakeRange(-500, 500);
+  Joystick.setSteeringRange(-500, 500);
+
+
+
+
+  SP0.gamepadAxisLogic();
+  SP1.gamepadAxisLogic();
+  SP2.gamepadAxisLogic();
   
 }
 
@@ -333,7 +351,10 @@ void loop() {
   REW0.REWCall();
   REW1.REWCall();
   REW2.REWCall();
-  REW3.REWCall();
-  //B0.readButton();
-
+  BT0.readButton();
+  BT1.readButton();
+  BT2.readButton();
+  SP0.gamepadAxisLogic();
+  SP1.gamepadAxisLogic();
+  SP2.gamepadAxisLogic();
 }

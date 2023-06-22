@@ -15,21 +15,20 @@ Joystick_ Joystick(JOYSTICK_DEFAULT_REPORT_ID,
   JOYSTICK_TYPE_GAMEPAD,
   32, //number of buttons
   0, //number of hat switches
-  //Set as many axis to "true" as you have potentiometers for
   true, // x axis
   true, // y axis
   true, // z axis
   true, // rx axis
   true, // ry axis
   true, // rz axis
-  true, // rudder
-  true, // throttle
-  true, // accelerator
-  true, // brake
-  true); // steering wheel
+  false, // rudder
+  false, // throttle
+  false, // accelerator
+  false, // brake
+  false); // steering wheel
 const bool initAutoSendState = true;
 
-void axisSet(int axisIdInput, int value) {
+void axisSet(int axisIdInput, long value) {
   switch(axisIdInput) {
     case 0:
       Joystick.setXAxis(value);
@@ -80,8 +79,7 @@ class Button {
 
     Button(uint8_t pinInput) {
       pin = pinInput;
-      pinMode(pin, INPUT);
-      digitalWrite(pin, HIGH);
+      pinMode(pin, INPUT_PULLUP);
       gamePadButton = GAMEPADBUTTONNUM;
       GAMEPADBUTTONNUM++;
       pressed = false;
@@ -127,24 +125,30 @@ class Potentiometer {
   public:
     int pin;
     int axisId;
+    double lastAvg;
 
     Potentiometer (int pinInput, int axisIdInput) {
       pin = pinInput;
       axisId = axisIdInput;
+      lastAvg = 0.0;
     }
 
     double getAverageOutput(){
       double total = 0.0;
       
       //20 is just a magic number for the number of readings to take, dont think about it :)
-      for (int i = 0; i < 20; i++) {
+      for (int i = 0; i < 2; i++) {
         total = total + analogRead(pin);
       }
-      return total / (20);
+      return total / (2);
     }
 
     void gamepadAxisLogic() {
-      axisSet(axisId, map(getAverageOutput(),0, 1023, -500, 500));
+      double cur = getAverageOutput();
+      if (abs(cur - lastAvg) > 45) {
+        axisSet(axisId, map(cur,0, 1023, -500, 500));
+      }
+      
 
     }
 
@@ -168,6 +172,7 @@ class REWrapper {
     bool turnPressed;
     long currentPosition;
     long lastPosition;
+    int lastSendRPM;
 
     REWrapper(int clkPinInput, int dtPinInput, int axisIdInput) {
       lastButtonPress = millis();
@@ -188,6 +193,7 @@ class REWrapper {
       direction = 1;
 
       axisId = axisIdInput;
+      lastSendRPM = 0;
       
     }
 
@@ -213,6 +219,7 @@ class REWrapper {
       direction = 1;
 
       axisId = axisIdInput;
+      lastSendRPM = 0;
 
 
       //pinMode(swPin, INPUT_PULLUP);
@@ -232,7 +239,11 @@ class REWrapper {
     }
 
     void gamepadAxisLogic() {
-      axisSet(axisId, getDirectionalRPM());
+      int curRPM = getDirectionalRPM();
+      if (abs(curRPM - lastSendRPM) > 2) {
+        axisSet(axisId, curRPM);
+      }
+      
     }
 
 
@@ -279,7 +290,6 @@ class REWrapper {
       }
 
  
-
       if(currentPosition > lastPosition) {
         lastPosition = currentPosition;
         Joystick.pressButton(cwGamepadButton);
@@ -320,6 +330,7 @@ Potentiometer SP1(A4, 4);
 Potentiometer SP2(A3, 5);
 void setup() {
   CURRENTMILLIS = millis();
+  //Serial.begin(9600);
   // put your setup code here, to run once:
   NUMENCODERS = 0;
   NUMPOTENTIOMETERS = 0;
@@ -339,10 +350,10 @@ void setup() {
 
 
 
-
+  /*
   SP0.gamepadAxisLogic();
   SP1.gamepadAxisLogic();
-  SP2.gamepadAxisLogic();
+  SP2.gamepadAxisLogic(); */
   
 }
 

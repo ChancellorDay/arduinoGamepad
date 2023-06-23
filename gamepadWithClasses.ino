@@ -325,6 +325,8 @@ Button BT0(9);
 Button BT1(10);
 Button BT2(11);
 
+Button TS0(12);
+
 Potentiometer SP0(A5, 3);
 Potentiometer SP1(A4, 4);
 Potentiometer SP2(A3, 5);
@@ -365,6 +367,7 @@ void loop() {
   BT0.readButton();
   BT1.readButton();
   BT2.readButton();
+  TS0.readButton();
   SP0.gamepadAxisLogic();
   SP1.gamepadAxisLogic();
   SP2.gamepadAxisLogic();

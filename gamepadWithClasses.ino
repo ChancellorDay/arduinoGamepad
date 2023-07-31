@@ -283,7 +283,7 @@ class REWrapper {
     void RETurnLogic() {
       currentPosition = REWrapped.getPosition();
 
-      if (turnPressed && (CURRENTMILLIS - lastTurn > 150)) {
+      if (turnPressed && (CURRENTMILLIS - lastTurn > 100)) {
         Joystick.releaseButton(cwGamepadButton);
         Joystick.releaseButton(ccwGamepadButton);
         turnPressed = false;

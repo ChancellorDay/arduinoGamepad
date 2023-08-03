@@ -13,6 +13,7 @@ To add the libraries, select "Tools" -> "Manage Libraries" then use the search b
 
 ### Installing the Joystick library.
 navagate into your arduino libaries folder, mine is located in ../documents/Arduino/Libraries
+
 '''
 git clone git@github.com:MHeironimus/ArduinoJoystickLibrary.git
 '''
